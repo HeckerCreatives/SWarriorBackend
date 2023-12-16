@@ -10,6 +10,8 @@ const routers = app => {
   app.use("/api/v1/announcements", require("./Announcements"));
   app.use("/api/v1/dashboards", require("./Dashboard"));
   app.use("/api/v1/cashins", require("./Cashins"));
+  app.use("/api/v1/videos", require("./Videos"));
+  app.use("/api/v1/arenas", require("./Arenas"));
 };
 
 module.exports = routers;

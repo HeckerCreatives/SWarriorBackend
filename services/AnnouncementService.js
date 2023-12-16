@@ -175,11 +175,6 @@ exports.getRecentAnnouncement = async (limit, page) => {
       nextPage: hasNextPage ? +page + 1 : null,
       prevPage: hasPrevPage ? +page - 1 : null,
     };
-
-    return {
-      success: true,
-      announcements,
-    };
   } catch (error) {
     console.log("GET_RECENT_ANNOUNCEMENT", error);
     throw new CustomError(error.message, error.statusCode || 500);

@@ -6,11 +6,13 @@ const morgan = require("morgan");
 const app = express();
 const path = require("path");
 const http = require("http");
+const { Server } = require("socket.io");
 
 const passport = require("passport");
 const db = require("./config/db");
 require("dotenv").config();
 const corsConfig = require("./config/cors");
+const { initializeSocket } = require("./socket/global");
 
 app.disable("x-powered-by");
 
@@ -32,8 +34,13 @@ app.use("/assets", express.static(path.join(__dirname, "assets")));
 app.use(express.static(path.join(__dirname, "./client")));
 
 const server = http.createServer(app);
+const io = new Server(server, {
+  cors: corsConfig,
+});
 
+initializeSocket(io);
 require("./config/passport");
+require("./socket/socket")(io);
 
 require("./routes")(app);
 
