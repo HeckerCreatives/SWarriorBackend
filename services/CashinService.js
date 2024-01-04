@@ -14,9 +14,12 @@ exports.adminCashin = async (token, amount) => {
 
     if (!wallet) throw new CustomError("Invalid user", 400);
 
-    wallet.amount += +amount;
-    wallet.markModified("amount");
-    await wallet.save();
+    await UserWallet.updateOne(
+      { _id: wallet._id },
+      {
+        $inc: { amount: amount },
+      }
+    ).exec();
 
     const cashinHistory = new Cashin({
       owner: wallet.owner,

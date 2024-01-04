@@ -11,7 +11,7 @@ const userWalletSchema = Schema(
     type: {
       type: String,
       enum: {
-        values: ["commission", "credit"],
+        values: ["commission", "credit", "draw"],
         message: "{VALUE} is not a valid type.",
       },
     },

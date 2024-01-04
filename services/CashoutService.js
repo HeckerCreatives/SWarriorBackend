@@ -25,9 +25,11 @@ exports.requestCashoutByType = async (userId, amount, type) => {
     if (amount > wallet.amount)
       throw new CustomError("Insufficient Balance", 400);
 
-    wallet.amount -= +amount;
-    wallet.markModified("amount");
-    wallet.save();
+    const updatedWallet = await UserWallet.findByIdAndUpdate(
+      { _id: wallet._id },
+      { $inc: { amount: -amount } },
+      { new: true }
+    ).exec();
 
     const request = new Cashout({
       owner: userId,
@@ -40,7 +42,7 @@ exports.requestCashoutByType = async (userId, amount, type) => {
 
     return {
       success: true,
-      balance: wallet.amount,
+      balance: updatedWallet.amount,
     };
   } catch (error) {
     console.log("REQUEST_CASHOUT_BY_TYPE", error);
@@ -308,9 +310,10 @@ exports.adminCashoutChangeStatus = async (cashoutId, agentId, status) => {
     }).exec();
 
     if (status === "reject") {
-      requestorWallet.amount += +cashout.amount;
-      requestorWallet.markModified("amount");
-      requestorWallet.save();
+      UserWallet.updateone(
+        { _id: requestorWallet._id },
+        { $inc: { amount: cashout.amount } }
+      ).exec();
     }
 
     if (cashout.walletType === "credit") {
@@ -320,9 +323,10 @@ exports.adminCashoutChangeStatus = async (cashoutId, agentId, status) => {
           type: cashout.walletType,
         }).exec();
 
-        acceptorWallet.amount += +cashout.amount;
-        acceptorWallet.markModified("amount");
-        acceptorWallet.save();
+        UserWallet.updateone(
+          { _id: acceptorWallet._id },
+          { $inc: { amount: cashout.amount } }
+        ).exec();
       }
     }
 
@@ -333,9 +337,10 @@ exports.adminCashoutChangeStatus = async (cashoutId, agentId, status) => {
           type: "credit",
         }).exec();
 
-        requestorCreditWallet.amount += +cashout.amount;
-        requestorCreditWallet.markModified("amount");
-        requestorCreditWallet.save();
+        UserWallet.updateone(
+          { _id: requestorCreditWallet._id },
+          { $inc: { amount: cashout.amount } }
+        ).exec();
       }
     }
 
@@ -372,9 +377,10 @@ exports.agentCashoutChangeStatus = async (cashoutId, agentId, status) => {
     }).exec();
 
     if (status === "reject") {
-      requestorWallet.amount += +cashout.amount;
-      requestorWallet.markModified("amount");
-      requestorWallet.save();
+      await UserWallet.updateOne(
+        { _id: requestorWallet._id },
+        { $inc: { amount: cashout.amount } }
+      ).exec();
     }
 
     if (status === "done") {
@@ -383,9 +389,10 @@ exports.agentCashoutChangeStatus = async (cashoutId, agentId, status) => {
         type: cashout.walletType,
       }).exec();
 
-      acceptorWallet.amount += +cashout.amount;
-      acceptorWallet.markModified("amount");
-      acceptorWallet.save();
+      await UserWallet.updateOne(
+        { _id: acceptorWallet._id },
+        { $inc: { amount: cashout.amount } }
+      ).exec();
     }
 
     cashout.status = status;

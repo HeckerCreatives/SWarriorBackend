@@ -39,9 +39,9 @@ const io = new Server(server, {
 });
 
 initializeSocket(io);
-require("./config/passport");
-require("./socket/socket")(io);
+require("./socket/socket").socket(io);
 
+require("./config/passport");
 require("./routes")(app);
 
 app.use(require("./middleware/gErrHandler"));

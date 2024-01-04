@@ -51,13 +51,15 @@ exports.transferCredit = async (data, token) => {
     if (senderWallet.amount < data.amount)
       throw new CustomError("Sender have insufficient balance.", 400);
 
-    receiverWallet.amount += +data.amount;
-    receiverWallet.markModified("amount");
-    receiverWallet.save();
+    await UserWallet.updateOne(
+      { _id: receiverWallet._id },
+      { $inc: { amount: data.amount } }
+    ).exec();
 
-    senderWallet.amount -= +data.amount;
-    senderWallet.markModified("amount");
-    senderWallet.save();
+    await UserWallet.updateOne(
+      { _id: senderWallet._id },
+      { $inc: { amount: -data.amount } }
+    ).exec();
 
     await new TransferHistory({
       action: "transfer",
@@ -122,13 +124,15 @@ exports.agentTransferPoints = async (data, token) => {
     if (senderWallet.amount < data.amount)
       throw new CustomError("Sender have insufficient balance.", 400);
 
-    receiverWallet.amount += +data.amount;
-    receiverWallet.markModified("amount");
-    receiverWallet.save();
+    await UserWallet.updateOne(
+      { _id: receiverWallet._id },
+      { $inc: { amount: data.amount } }
+    ).exec();
 
-    senderWallet.amount -= +data.amount;
-    senderWallet.markModified("amount");
-    senderWallet.save();
+    await UserWallet.updateOne(
+      { _id: senderWallet._id },
+      { $inc: { amount: -data.amount } }
+    ).exec();
 
     await new TransferHistory({
       action: "transfer",

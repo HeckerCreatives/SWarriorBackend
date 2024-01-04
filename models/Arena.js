@@ -11,7 +11,7 @@ const arenaSchema = Schema(
     fights: {
       type: Number,
       required: true,
-      default: 0,
+      default: 1,
     },
     eventName: {
       type: String,
@@ -61,7 +61,25 @@ const arenaSchema = Schema(
         values: ["standby", "open", "close"],
         message: "{VALUE} is not a valid type.",
       },
+      default: "open",
+    },
+    bettingStatus: {
+      type: String,
+      enum: {
+        values: ["standby", "open", "close"],
+        message: "{VALUE} is not a valid type.",
+      },
       default: "standby",
+    },
+    isControlled: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    creator: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
   },
   {

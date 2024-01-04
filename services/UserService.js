@@ -71,6 +71,7 @@ exports.getProfile = async userId => {
             bankAcctName: 1,
             paymentMode: 1,
             bankAcctAddDetails: 1,
+            referrer: 1,
           },
           wallets: {
             _id: 1,
@@ -84,13 +85,31 @@ exports.getProfile = async userId => {
         },
       },
       {
+        $unwind: "$role",
+      },
+      {
+        $unwind: "$details",
+      },
+      {
+        $lookup: {
+          from: "accounts",
+          localField: "details.referrer",
+          foreignField: "_id",
+          as: "referrer",
+        },
+      },
+      {
+        $unwind: "$referrer",
+      },
+      {
         $project: {
           username: 1,
           active: 1,
           status: 1,
           verified: 1,
-          role: { $arrayElemAt: ["$role", 0] },
-          details: { $arrayElemAt: ["$details", 0] },
+          referrer: "$referrer.username",
+          role: 1,
+          details: 1,
           commissionRate: {
             $arrayElemAt: ["$commissionRate", 0],
           },

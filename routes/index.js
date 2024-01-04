@@ -12,6 +12,9 @@ const routers = app => {
   app.use("/api/v1/cashins", require("./Cashins"));
   app.use("/api/v1/videos", require("./Videos"));
   app.use("/api/v1/arenas", require("./Arenas"));
+  app.use("/api/v1/bets", require("./Bets"));
+  app.use("/api/v1/commission-histories", require("./CommissionHistories"));
+  app.use("/api/v1/rounds", require("./Rounds"));
 };
 
 module.exports = routers;

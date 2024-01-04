@@ -54,6 +54,11 @@ module.exports = () => {
                 owner: account._id,
                 type: "credit",
               },
+              {
+                _id: "65640f774c6a1f5621312fdd",
+                owner: account._id,
+                type: "draw",
+              },
             ]);
           }
         });

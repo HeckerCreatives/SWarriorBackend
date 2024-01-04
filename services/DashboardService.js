@@ -4,6 +4,8 @@ const Cashout = require("../models/Cashout");
 const Account = require("../models/Account");
 const TransferHistory = require("../models/TransferHistory");
 const CustomError = require("../utils/custom-error");
+const EarningHistory = require("../models/EarningHistory");
+const CommisionHistory = require("../models/CommisionHistory");
 
 const mongooseId = id => new mongoose.Types.ObjectId(id);
 
@@ -110,6 +112,139 @@ exports.getAllConvertedCommissions = async () => {
     };
   } catch (error) {
     console.log("GET_ALL_CONVERTED_COMMISSIONS", error);
+    throw new CustomError(error.message, error.statusCode || 500);
+  }
+};
+
+exports.getDailyCommissionsByType = async type => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const matches = {};
+    if (type === "company") {
+      matches.$eq = "Superadmin";
+    }
+
+    if (type === "agent") {
+      matches.$ne = "Superadmin";
+    }
+
+    const commissions = await CommisionHistory.aggregate([
+      {
+        $lookup: {
+          from: "accounts",
+          localField: "receiver",
+          foreignField: "_id",
+          as: "account",
+        },
+      },
+      {
+        $unwind: {
+          path: "$account",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "roles",
+          localField: "account.roleId",
+          foreignField: "_id",
+          as: "role",
+        },
+      },
+      {
+        $unwind: {
+          path: "$role",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          createdAt: {
+            $gte: today,
+          },
+          "role.name": matches,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]).exec();
+
+    return {
+      success: true,
+      dailyCommissions: commissions.length !== 0 ? commissions[0].total : 0,
+    };
+  } catch (error) {
+    console.log("GET_DAILY_COMMISSIONS_BY_TYPE", error);
+    throw new CustomError(error.message, error.statusCode || 500);
+  }
+};
+
+exports.getTotalDrawEarnings = async () => {
+  try {
+    const getTotalDrawEarnings = await EarningHistory.aggregate([
+      {
+        $match: {
+          type: "draw",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]).exec();
+
+    return {
+      success: true,
+      totalDrawEarnings:
+        getTotalDrawEarnings.length !== 0 ? getTotalDrawEarnings[0].total : 0,
+    };
+  } catch (error) {
+    console.log("GET_TOTAL_DRAW_EARNINGS", error);
+    throw new CustomError(error.message, error.statusCode || 500);
+  }
+};
+
+exports.getDailyDrawEarnings = async () => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dailyDrawEarnings = await EarningHistory.aggregate([
+      {
+        $match: {
+          type: "draw",
+        },
+      },
+      {
+        $match: {
+          createdAt: {
+            $gte: today,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]).exec();
+
+    return {
+      success: true,
+      dailyDrawEarnings:
+        dailyDrawEarnings.length !== 0 ? dailyDrawEarnings[0].total : 0,
+    };
+  } catch (error) {
+    console.log("GET_DAILY_DRAW_EARNINGS", error);
     throw new CustomError(error.message, error.statusCode || 500);
   }
 };
@@ -406,6 +541,217 @@ exports.getRegularEarnings = async () => {
     };
   } catch (error) {
     console.log("GET_REGULAR_EARNINGS", error);
+    throw new CustomError(error.message, error.statusCode || 500);
+  }
+};
+
+exports.getDrawEarnings = async () => {
+  try {
+    const currentMonth = new Date();
+    currentMonth.setDate(1);
+    currentMonth.setHours(0, 0, 0, 0);
+
+    const currentMonthEnd = new Date(currentMonth);
+    currentMonthEnd.setMonth(currentMonth.getMonth() + 1);
+    currentMonthEnd.setMilliseconds(currentMonthEnd.getMilliseconds() - 1);
+
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    lastMonth.setDate(1);
+    lastMonth.setHours(0, 0, 0, 0);
+
+    const lastMonthEnd = new Date(lastMonth);
+    lastMonthEnd.setMonth(lastMonth.getMonth() + 1);
+    lastMonthEnd.setMilliseconds(lastMonthEnd.getMilliseconds() - 1);
+
+    const currentMonthPromise = EarningHistory.aggregate([
+      {
+        $match: {
+          type: "draw",
+          createdAt: {
+            $gte: currentMonth,
+            $lte: currentMonthEnd,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]).exec();
+
+    const lastMonthPromise = EarningHistory.aggregate([
+      {
+        $match: {
+          type: "draw",
+          createdAt: {
+            $gte: lastMonth,
+            $lte: lastMonthEnd,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]).exec();
+
+    const [currentMonthEarnings, lastMonthEarnings] = await Promise.all([
+      currentMonthPromise,
+      lastMonthPromise,
+    ]);
+
+    return {
+      success: true,
+      currentMonth:
+        currentMonthEarnings.length === 0 ? 0 : currentMonthEarnings[0].total,
+      lastMonth:
+        lastMonthEarnings.length === 0 ? 0 : lastMonthEarnings[0].total,
+    };
+  } catch (error) {
+    console.log("GET_DRAW_EARNINGS", error);
+    throw new CustomError(error.message, error.statusCode || 500);
+  }
+};
+
+exports.getEarningsByType = async type => {
+  try {
+    const currentMonth = new Date();
+    currentMonth.setDate(1);
+    currentMonth.setHours(0, 0, 0, 0);
+
+    const currentMonthEnd = new Date(currentMonth);
+    currentMonthEnd.setMonth(currentMonth.getMonth() + 1);
+    currentMonthEnd.setMilliseconds(currentMonthEnd.getMilliseconds() - 1);
+
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    lastMonth.setDate(1);
+    lastMonth.setHours(0, 0, 0, 0);
+
+    const lastMonthEnd = new Date(lastMonth);
+    lastMonthEnd.setMonth(lastMonth.getMonth() + 1);
+    lastMonthEnd.setMilliseconds(lastMonthEnd.getMilliseconds() - 1);
+
+    const matches = {};
+    if (type === "company") {
+      matches.$eq = "Superadmin";
+    }
+
+    if (type === "agent") {
+      matches.$ne = "Superadmin";
+    }
+
+    const currentMonthPromise = CommisionHistory.aggregate([
+      {
+        $lookup: {
+          from: "accounts",
+          localField: "receiver",
+          foreignField: "_id",
+          as: "account",
+        },
+      },
+      {
+        $unwind: {
+          path: "$account",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "roles",
+          localField: "account.roleId",
+          foreignField: "_id",
+          as: "role",
+        },
+      },
+      {
+        $unwind: {
+          path: "$role",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          createdAt: {
+            $gte: currentMonth,
+            $lte: currentMonthEnd,
+          },
+          "role.name": matches,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]).exec();
+
+    const lastMonthPromise = CommisionHistory.aggregate([
+      {
+        $lookup: {
+          from: "accounts",
+          localField: "receiver",
+          foreignField: "_id",
+          as: "account",
+        },
+      },
+      {
+        $unwind: {
+          path: "$account",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "roles",
+          localField: "account.roleId",
+          foreignField: "_id",
+          as: "role",
+        },
+      },
+      {
+        $unwind: {
+          path: "$role",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          createdAt: {
+            $gte: lastMonth,
+            $lte: lastMonthEnd,
+          },
+          "role.name": matches,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]).exec();
+
+    const [currentMonthEarnings, lastMonthEarnings] = await Promise.all([
+      currentMonthPromise,
+      lastMonthPromise,
+    ]);
+
+    return {
+      success: true,
+      currentMonth:
+        currentMonthEarnings.length === 0 ? 0 : currentMonthEarnings[0].total,
+      lastMonth:
+        lastMonthEarnings.length === 0 ? 0 : lastMonthEarnings[0].total,
+    };
+  } catch (error) {
+    console.log("GET_EARNINGS_BY_TYPE", error);
     throw new CustomError(error.message, error.statusCode || 500);
   }
 };

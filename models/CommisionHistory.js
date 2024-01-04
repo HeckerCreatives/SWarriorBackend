@@ -13,12 +13,23 @@ const commisionHistorySchema = Schema(
       ref: "Account",
       required: true,
     },
+    betId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Bet",
+      required: true,
+    },
     amount: {
       type: Number,
       required: true,
     },
     arena: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Arena",
+      required: true,
+    },
+    round: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Round",
       required: true,
     },
   },
