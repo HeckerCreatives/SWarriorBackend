@@ -6,7 +6,9 @@ exports.getRoundsByArena = async arenaId => {
   try {
     if (!isIdValid(arenaId)) throw new CustomError("Invalid arena", 400);
 
-    const rounds = await Round.find({ arenaId }).exec();
+    const rounds = await Round.find({ arenaId, outcome: { $ne: "-" } })
+      .sort("-createdAt")
+      .exec();
 
     return {
       success: true,
