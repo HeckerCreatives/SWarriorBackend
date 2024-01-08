@@ -593,7 +593,7 @@ exports.arenaUpdateRound = async (arenaId, roundNumber) => {
         400
       );
 
-    if (+arena.fights === +roundNumber)
+    if (+arena.fights >= +roundNumber)
       throw new CustomError("Please enter other round number", 400);
 
     const round = await Round.findOne({
