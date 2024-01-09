@@ -310,7 +310,7 @@ exports.adminCashoutChangeStatus = async (cashoutId, agentId, status) => {
     }).exec();
 
     if (status === "reject") {
-      UserWallet.updateone(
+      UserWallet.updateOne(
         { _id: requestorWallet._id },
         { $inc: { amount: cashout.amount } }
       ).exec();
@@ -323,7 +323,7 @@ exports.adminCashoutChangeStatus = async (cashoutId, agentId, status) => {
           type: cashout.walletType,
         }).exec();
 
-        UserWallet.updateone(
+        UserWallet.updateOne(
           { _id: acceptorWallet._id },
           { $inc: { amount: cashout.amount } }
         ).exec();
@@ -337,7 +337,7 @@ exports.adminCashoutChangeStatus = async (cashoutId, agentId, status) => {
           type: "credit",
         }).exec();
 
-        UserWallet.updateone(
+        UserWallet.updateOne(
           { _id: requestorCreditWallet._id },
           { $inc: { amount: cashout.amount } }
         ).exec();
