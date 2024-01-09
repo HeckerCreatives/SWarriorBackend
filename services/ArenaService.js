@@ -72,6 +72,45 @@ exports.getArenas = async (limit, page) => {
   }
 };
 
+exports.getArenasForCommissions = async (limit, page) => {
+  try {
+    const offset = (+page - 1) * limit;
+
+    const countPromise = Arena.countDocuments();
+    const arenaPromise = Arena.find()
+      .populate("moderator", "username")
+      .sort("-createdAt")
+      .skip(offset)
+      .limit(limit)
+      .exec();
+    const hasNext = Arena.exists()
+      .skip(limit + offset)
+      .exec();
+
+    const [count, arenas, hasNextPage] = await Promise.all([
+      countPromise,
+      arenaPromise,
+      hasNext,
+    ]);
+
+    const hasPrevPage = +page > 1;
+
+    let totalPages = Math.floor(count / limit);
+    if (count % limit > 0) totalPages++;
+
+    return {
+      success: true,
+      arenas,
+      totalPages,
+      nextPage: hasNextPage ? +page + 1 : null,
+      prevPage: hasPrevPage ? +page - 1 : null,
+    };
+  } catch (error) {
+    console.log("GET_ARENAS", error);
+    throw new CustomError(error.message, error.statusCode || 500);
+  }
+};
+
 exports.getClosedArenas = async (limit, page) => {
   try {
     const offset = (+page - 1) * limit;

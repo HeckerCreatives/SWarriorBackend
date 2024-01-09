@@ -17,6 +17,7 @@ const {
   arenaNextRound,
   giveWinsAndComms,
   arenaUpdateRound,
+  getArenasForCommissions,
 } = require("../controllers/Arenas");
 const { isController } = require("../middleware/isController");
 
@@ -114,6 +115,21 @@ router
       "Gold",
     ]),
     getArenas
+  )
+  .get(
+    "/:limit/:page/commissions",
+    passport.authenticate("jwt", { session: false }),
+    isAuthorize([
+      "Superadmin",
+      "Moderator",
+      "Player",
+      "Accountant",
+      "Financer",
+      "Sub",
+      "Master",
+      "Gold",
+    ]),
+    getArenasForCommissions
   )
   .get(
     "/:limit/:page/closed",
