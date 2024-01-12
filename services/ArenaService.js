@@ -602,7 +602,7 @@ exports.giveWinsAndComms = async (playerId, roundId, arenaId) => {
         round._id,
         bet._id,
         arena.plasadaRate,
-        playerGrossPayout
+        bet.amount
       );
     }
 

@@ -360,16 +360,13 @@ exports.processUnprocessedBets = async owner => {
             ).exec();
           }
 
-          const playerGrossPayout =
-            bet.bet === "meron" ? roundPayout.calcMeron : roundPayout.calcWala;
-
           giveCommissions(
             owner,
             bet.arenaId._id,
             bet.roundId._id,
             bet._id,
             bet.arenaId.plasadaRate,
-            playerGrossPayout
+            bet.amount
           );
         }
 
