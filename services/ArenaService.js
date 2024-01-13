@@ -13,6 +13,7 @@ const UserWallet = require("../models/UserWallet");
 const { giveCommissions } = require("../utils/wallet-actions");
 const { betsByRoom } = require("../socket/socket");
 const EarningHistory = require("../models/EarningHistory");
+const { isTotalBetsValid } = require("../utils/total-bet-checker");
 
 const mongooseId = id => new mongoose.Types.ObjectId(id);
 
@@ -472,6 +473,12 @@ exports.arenaFinishRound = async (arenaId, result) => {
 
     const validate = outcomeIsValid(result, arena.drawEnabled);
     if (!validate.isValid) throw new CustomError(validate.msg, 400);
+
+    if (!isTotalBetsValid(arena._id) && result !== "cancel")
+      throw new CustomError(
+        "Invalid total bets. You can only cancel this round.",
+        400
+      );
 
     const round = await Round.findOne({
       arenaId: arena._id,

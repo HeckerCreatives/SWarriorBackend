@@ -8,6 +8,7 @@ const CustomError = require("../utils/custom-error");
 const { betIsValid } = require("../validators/BetValidate");
 const { getOtherPayout } = require("../utils/payout");
 const { giveCommissions } = require("../utils/wallet-actions");
+const { betsByRoom } = require("../socket/socket");
 
 const mongooseId = id => new mongoose.Types.ObjectId(id);
 
@@ -32,19 +33,13 @@ exports.betByType = async (arenaId, bet, amount, token) => {
     }).exec();
     if (!round) throw new CustomError("Invalid round", 400);
 
-    const validate = betIsValid(bet, amount, arena.drawEnabled);
-    if (!validate.isValid) throw new CustomError(validate.msg, 400);
-
     const didBet = await Bet.findOne({
       roundId: round._id,
       owner: token._id,
     }).exec();
 
-    if (didBet)
-      throw new CustomError(
-        `You already bet on ${didBet.bet} (${didBet.amount}) in this round.`,
-        400
-      );
+    const validate = betIsValid(bet, amount, arena.drawEnabled, didBet);
+    if (!validate.isValid) throw new CustomError(validate.msg, 400);
 
     const wallet = await UserWallet.findOne({
       owner: token._id,
@@ -54,20 +49,58 @@ exports.betByType = async (arenaId, bet, amount, token) => {
     if (+wallet.amount < +amount)
       throw new CustomError("Insufficient balance.", 400);
 
-    const newBet = await new Bet({
-      arenaId: arena._id,
-      roundId: round._id,
-      owner: token._id,
-      bet,
-      amount,
-    }).save();
+    let newBet;
 
-    await UserWallet.updateOne(
-      { _id: wallet._id },
-      {
-        $inc: { amount: -amount },
+    if (didBet) {
+      if ((didBet.bet === "wala" || didBet.bet === "meron") && bet === "draw") {
+        throw new CustomError("You cannot switch your bet on draw", 400);
       }
-    ).exec();
+
+      if (bet === didBet.bet) {
+        newBet = await Bet.findOneAndUpdate(
+          { _id: didBet._id },
+          { $inc: { amount: amount } },
+          { new: true }
+        );
+
+        if (didBet.bet === "wala")
+          betsByRoom.get(`${arena._id}`)[`totalWala`] -= didBet.amount;
+
+        if (didBet.bet === "meron")
+          betsByRoom.get(`${arena._id}`)[`totalMeron`] -= didBet.amount;
+      }
+
+      if (bet !== didBet.bet) {
+        newBet = await Bet.findOneAndUpdate(
+          { _id: didBet._id },
+          { $set: { bet: bet } },
+          { new: true }
+        );
+
+        if (bet === "wala")
+          betsByRoom.get(`${arena._id}`)[`totalMeron`] -= didBet.amount;
+
+        if (bet === "meron")
+          betsByRoom.get(`${arena._id}`)[`totalWala`] -= didBet.amount;
+      }
+    } else {
+      newBet = await new Bet({
+        arenaId: arena._id,
+        roundId: round._id,
+        owner: token._id,
+        bet,
+        amount,
+      }).save();
+    }
+
+    if ((didBet && bet === didBet.bet) || !didBet) {
+      await UserWallet.updateOne(
+        { _id: wallet._id },
+        {
+          $inc: { amount: -amount },
+        }
+      ).exec();
+    }
 
     return {
       success: true,
