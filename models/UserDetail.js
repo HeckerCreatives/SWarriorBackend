@@ -22,7 +22,6 @@ const userDetailSchema = Schema(
     referrer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Account",
-      required: true,
     },
     country: {
       type: String,

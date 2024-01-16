@@ -3,6 +3,7 @@ const Role = require("../models/Role");
 const Account = require("../models/Account");
 const UserWallet = require("../models/UserWallet");
 const ArenaUserDetail = require("../models/ArenaUserDetail");
+const UserDetail = require("../models/UserDetail");
 
 module.exports = () => {
   mongoose.set("strictQuery", true);
@@ -38,6 +39,12 @@ module.exports = () => {
             account.savePassword(process.env.SU_PASSWORD);
             await account.save();
 
+            new UserDetail({
+              owner: account._id,
+              email: process.env.SU_EMAIL,
+              phoneNumber: process.env.SU_PHONENUMBER,
+            }).save();
+
             new ArenaUserDetail({
               owner: account._id,
               commisionRate: 8,
@@ -45,17 +52,17 @@ module.exports = () => {
 
             UserWallet.insertMany([
               {
-                _id: "65640f774c6a1f5621312fdb",
+                _id: process.env.SU_COMMISSION_WALLET_ID,
                 owner: account._id,
                 type: "commission",
               },
               {
-                _id: "65640f774c6a1f5621312fdc",
+                _id: process.env.SU_CREDIT_WALLET_ID,
                 owner: account._id,
                 type: "credit",
               },
               {
-                _id: "65640f774c6a1f5621312fdd",
+                _id: process.env.SU_DRAW_WALLET_ID,
                 owner: account._id,
                 type: "draw",
               },

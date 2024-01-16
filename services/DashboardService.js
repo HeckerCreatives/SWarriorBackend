@@ -383,7 +383,7 @@ exports.getOtherStats = async () => {
 exports.getCompanyCommission = async () => {
   try {
     const wallet = await UserWallet.findOne({
-      _id: "65640f774c6a1f5621312fdb",
+      _id: process.env.SU_COMMISSION_WALLET_ID,
     }).exec();
 
     return {

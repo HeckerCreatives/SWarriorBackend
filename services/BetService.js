@@ -296,7 +296,7 @@ exports.processUnprocessedBets = async owner => {
             );
 
             await UserWallet.updateOne(
-              { _id: "65640f774c6a1f5621312fdc" },
+              { _id: process.env.SU_CREDIT_WALLET_ID },
               { $inc: { amount: -winningAmount } }
             ).exec();
           }
@@ -304,7 +304,7 @@ exports.processUnprocessedBets = async owner => {
           if (!didWin) {
             const netBet = bet.amount - bet.amount * (arena.plasadaRate / 100);
             await UserWallet.updateOne(
-              { _id: "65640f774c6a1f5621312fdd" },
+              { _id: process.env.SU_DRAW_WALLET_ID },
               { $inc: { amount: +netBet } }
             ).exec();
 
